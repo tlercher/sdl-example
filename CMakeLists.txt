@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
 project(example)
 
-set(SDL_STATIC ON CACHE BOOL "" FORCE)
-set(SDL_STATIC_PIC ON CACHE BOOL "" FORCE)
-set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-add_subdirectory(thirdparty/SDL)
+# Option to use system provided SDL, if it shouldn't be bundled in
+option(VENDOR_SDL "Use vendored SDL" ON)
+if(VENDOR_SDL)
+  set(SDL_STATIC ON CACHE BOOL "" FORCE)
+  set(SDL_STATIC_PIC ON CACHE BOOL "" FORCE)
+  set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+  add_subdirectory(thirdparty/SDL EXCLUDE_FROM_ALL)
+  set(_SDL_TARGET SDL2main SDL2-static)
+else()
+  find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
+  find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2_main)
+  set(_SDL_TARGET SDL2main SDL2)
+endif()
+
 
 set(EXAMPLE_SOURCES
     src/main.c
@@ -46,5 +56,7 @@ if(MSVC)
 endif()
 
 add_executable(example WIN32 MACOSX_BUNDLE ${EXAMPLE_SOURCES} ${THIRDPARTY_SOURCES})
-target_link_libraries(example SDL2main SDL2-static)
+
+target_link_libraries(example PRIVATE ${_SDL_TARGET})
+
 set_target_properties(example PROPERTIES C_STANDARD 11)
