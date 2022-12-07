@@ -1,20 +1,16 @@
-cmake_minimum_required(VERSION 3.20)
-project(example)
-
-# Option to use system provided SDL, if it shouldn't be bundled in
-option(VENDOR_SDL "Use vendored SDL" ON)
-if(VENDOR_SDL)
-  set(SDL_STATIC ON CACHE BOOL "" FORCE)
-  set(SDL_STATIC_PIC ON CACHE BOOL "" FORCE)
-  set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-  add_subdirectory(thirdparty/SDL EXCLUDE_FROM_ALL)
-  set(_SDL_TARGET SDL2main SDL2-static)
-else()
-  find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
-  find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2_main)
-  set(_SDL_TARGET SDL2main SDL2)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+  message(FATAL_ERROR "Prevented in-tree build. Please create a build directory outside of the source code directory and run \"cmake -S ${CMAKE_SOURCE_DIR} -B .\" from there")
 endif()
 
+
+cmake_minimum_required(VERSION 3.20)
+set(PROJECT_TARGET_NAME "example")
+
+project(${PROJECT_TARGET_NAME})
+
+
+include(SDL)
 
 set(EXAMPLE_SOURCES
     src/main.c
@@ -34,6 +30,8 @@ set(THIRDPARTY_UNIX_SOURCES
     # Files which should be excluded for Windows
 )
 
+include_directories(include)
+
 if(WIN32)
   set(EXAMPLE_SOURCES ${EXAMPLE_SOURCES} ${EXAMPLE_WIN32_SOURCES})
   set(THIRDPARTY_SOURCES ${THIRDPARTY_SOURCES} ${THIRDPARTY_WIN32_SOURCES})
@@ -50,13 +48,12 @@ if(MSVC)
   set(CMAKE_C_FLAGS "/MP ${CMAKE_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "/MP ${CMAKE_CXX_FLAGS}")
 
-  set(CMAKE_C_FLAGS_RELEASE "/O2 /GL")
-  set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/LTCG")
-endif()
+  set(CMAKE_C_FLAGS_RELEASE "/O2")
+  set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+ endif()
 
-add_executable(example WIN32 MACOSX_BUNDLE ${EXAMPLE_SOURCES} ${THIRDPARTY_SOURCES})
+add_executable(${PROJECT_TARGET_NAME} WIN32 MACOSX_BUNDLE ${EXAMPLE_SOURCES} ${THIRDPARTY_SOURCES})
 
-target_link_libraries(example PRIVATE ${_SDL_TARGET})
+target_link_libraries(${PROJECT_TARGET_NAME} PRIVATE ${_SDL_BUILD_TARGET})
 
-set_target_properties(example PROPERTIES C_STANDARD 11)
+set_target_properties(${PROJECT_TARGET_NAME} PROPERTIES C_STANDARD 11)
